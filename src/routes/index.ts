@@ -1,8 +1,7 @@
 import { Router } from "express";
-import { hello } from "../controller/index.controller";
-const router = Router()
+import { identify } from "../controller/index.controller";
+const router = Router();
 
+router.post("/identify", identify);
 
-router.get("/hello",hello)
-
-export default router
+export default router;
