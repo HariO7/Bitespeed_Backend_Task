@@ -38,18 +38,25 @@ export const identify = async (req: Request, res: Response) => {
           getContact.emails.includes(email) &&
           getContact.phoneNumbers.includes(phoneNumber)
         ) {
+          //data formating
           const allContacts = await prisma.contact.findMany({
             where: {
               linkedId: getContact.id,
             },
           });
-          console.log("allContacts->", allContacts);
-
           const secondaryContactIds: Array<number> = [];
-          let emails = getContact.emails.concat(...allContacts.map((c) => c.emails));
-          let phoneNumbers = getContact.phoneNumbers.concat(...allContacts.map((c) => c.phoneNumbers));
-          emails = emails.filter((item, index) => emails.indexOf(item) === index);
-          phoneNumbers = phoneNumbers.filter((item, index) => phoneNumbers.indexOf(item) === index);
+          let emails = getContact.emails.concat(
+            ...allContacts.map((c) => c.emails)
+          );
+          let phoneNumbers = getContact.phoneNumbers.concat(
+            ...allContacts.map((c) => c.phoneNumbers)
+          );
+          emails = emails.filter(
+            (item, index) => emails.indexOf(item) === index
+          );
+          phoneNumbers = phoneNumbers.filter(
+            (item, index) => phoneNumbers.indexOf(item) === index
+          );
           return res.json({
             contact: {
               primaryContactId: getContact.id,
@@ -59,6 +66,7 @@ export const identify = async (req: Request, res: Response) => {
             },
           });
         }
+        // creation 
         createData = {
           emails: [...new Set([...(getContact.emails || []), email])],
           phoneNumbers: [
