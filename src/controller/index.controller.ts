@@ -1,10 +1,10 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 
 const prisma = new PrismaClient();
 type Body = {
   email?: string;
-  phoneNumber?: number;
+  phoneNumber?: string;
 };
 
 export const identify = async (req: Request, res: Response) => {
@@ -12,30 +12,47 @@ export const identify = async (req: Request, res: Response) => {
     console.log("body", req.body);
 
     const { email, phoneNumber } = req.body as Body;
-    console.log("email", email);
+    let createData: Prisma.ContactUncheckedCreateInput = {
+      linkPrecedence:'primary'
+    };
 
     if (email !== undefined && phoneNumber !== undefined) {
+      console.log("email", email);
       const getContact = await prisma.contact.findFirst({
         where: {
-          OR:[
+          OR: [
             {
-              email
+              emails: { has: email },
             },
             {
-              phoneNumber
-            }
-          ]
-        }
-      })
-      const create = await prisma.contact.create({
-        data: {
-          email: email,
-          phoneNumber: phoneNumber,
-          linkPrecedence: "primary",
+              phoneNumbers: { has: phoneNumber },
+            },
+          ],
         },
+      });
+      if (getContact) {
+        createData = {
+          emails: [...new Set([...(getContact.emails || []), email])],
+          phoneNumbers: [
+            ...new Set([...(getContact.phoneNumbers || []), phoneNumber]),
+          ],
+          linkedId: getContact.id,
+          linkPrecedence: "secondary",
+        };
+      } else {
+        createData = {
+          emails: [email],
+          phoneNumbers: [phoneNumber],
+          linkPrecedence: "primary",
+        };
+      }
+
+      const create = await prisma.contact.create({
+        data: createData,
       });
       return res.status(200).json({ create });
     }
+    return res.status(200).json({ hello: "joi" });
   } catch (error) {
     console.log(error);
 

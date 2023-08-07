@@ -11,10 +11,10 @@ datasource db {
 }
 
 
-model contact {
+model Contact {
   id                   Int @id @default(autoincrement())
-  phoneNumber          String[]? 
-  email                String[]?
+  phoneNumbers         String[]   
+  emails               String[]   
   linkedId             Int?
   linkPrecedence       linkPrecedence
   createdAt            DateTime @default(now())             
