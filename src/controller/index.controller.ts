@@ -66,7 +66,7 @@ export const identify = async (req: Request, res: Response) => {
             },
           });
         }
-        // creation 
+        // creation
         createData = {
           emails: [...new Set([...(getContact.emails || []), email])],
           phoneNumbers: [
@@ -88,7 +88,6 @@ export const identify = async (req: Request, res: Response) => {
       });
       return res.status(200).json({ create });
     }
-    return res.status(200).json({ hello: "joi" });
   } catch (error) {
     console.log(error);
 
