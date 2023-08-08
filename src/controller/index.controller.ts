@@ -18,33 +18,47 @@ export const identify = async (req: Request, res: Response) => {
 
     if (email !== undefined && phoneNumber !== undefined) {
       // add middleware for this check
-      console.log("email", email);
+      console.log("data -->", {phoneNumber, email});
       const getContact = await prisma.contact.findFirst({
         where: {
           OR: [
             {
-              emails: { has: email },
+              emails: { has: email !== null ? email : "" },
             },
             {
-              phoneNumbers: { has: phoneNumber },
+              phoneNumbers: { has: phoneNumber === null ? "" : phoneNumber },
             },
           ],
+          linkPrecedence: "primary",
         },
       });
+      console.log("getContact->", getContact);
+      
       if (getContact) {
-        console.log("getContact->", getContact);
-
         if (
-          getContact.emails.includes(email) &&
+          getContact.emails.includes(email) ||
           getContact.phoneNumbers.includes(phoneNumber)
         ) {
+          if (email !== null && phoneNumber !== null) {
+            createData = {
+              emails: [email],
+              phoneNumbers: [phoneNumber],
+              linkedId: getContact.id,
+              linkPrecedence: "secondary",
+            };
+
+            await prisma.contact.create({ data: createData });
+          }
+
           //data formating
           const allContacts = await prisma.contact.findMany({
             where: {
               linkedId: getContact.id,
             },
           });
-          const secondaryContactIds: Array<number> = [];
+          const secondaryContactIds: Array<number> = allContacts.map(
+            (e) => e.id
+          );
           let emails = getContact.emails.concat(
             ...allContacts.map((c) => c.emails)
           );
@@ -57,7 +71,7 @@ export const identify = async (req: Request, res: Response) => {
           phoneNumbers = phoneNumbers.filter(
             (item, index) => phoneNumbers.indexOf(item) === index
           );
-          return res.json({
+          return res.status(201).json({
             contact: {
               primaryContactId: getContact.id,
               emails,
@@ -66,27 +80,17 @@ export const identify = async (req: Request, res: Response) => {
             },
           });
         }
-        // creation
-        createData = {
-          emails: [...new Set([...(getContact.emails || []), email])],
-          phoneNumbers: [
-            ...new Set([...(getContact.phoneNumbers || []), phoneNumber]),
-          ],
-          linkedId: getContact.id,
-          linkPrecedence: "secondary",
-        };
       } else {
         createData = {
           emails: [email],
           phoneNumbers: [phoneNumber],
           linkPrecedence: "primary",
         };
+        const create = await prisma.contact.create({
+          data: createData,
+        });
+        return res.status(201).json({ create });
       }
-
-      const create = await prisma.contact.create({
-        data: createData,
-      });
-      return res.status(200).json({ create });
     }
   } catch (error) {
     console.log(error);
